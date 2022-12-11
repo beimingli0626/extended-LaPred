@@ -4,6 +4,7 @@ from scripts.utils import gpu
 class PositionLoss():
     """
     Position Loss, which is the L1 loss between the best modality and ground truth trajectory
+    Calculated in pred_loss
     """
     def __init__(self):
         # use default beta = 1.0

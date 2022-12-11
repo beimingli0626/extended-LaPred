@@ -7,7 +7,8 @@ class LaneOffLoss():
     Lane Off Loss, which reflects the tendency of the target agent stick close to the reference lane in the future,
     this encourages the model to reduce the distance from the lane whenever the prediction deviates from a lane 
     farther than the ground truth.
-
+    Calculated in pred_loss
+    
     Refer to original LAPred Paper for details: https://arxiv.org/abs/2104.00249
     """
     def __init__(self):
@@ -21,12 +22,13 @@ class LaneOffLoss():
         :param has_gt_preds: indicator of whether has future trajectory at certain timestamp, (_batch_size_, 2*pred_size)
         :param gt_preds: ground truth future trajectory, (_batch_size_, 2*pred_size, 2)
         :param preds: selected predicted trajectory, (_batch_size_, 2*pred_size, 2)
-        :return loss: computed lane-off loss
+        :return loss: computed lane-off loss, reformed to a list [laneoff_loss] for uni-format across losses
         """
         rot, orig = gpu(data["rot"]), gpu(data['orig'])
         map_info = gpu(data['map_info'])
 
         loss = 0
+        count = 0
         for i in range(len(map_info)):
             gt_idx = map_info[i]['label']
             if gt_idx != 90 and mask[i]:  # refer to nuScenes, lane_label=90 indicates invalid reference lane
@@ -46,4 +48,5 @@ class LaneOffLoss():
                 indicator = torch.ge(delta_pred, delta_gt).type(torch.float)  # if distance from predicted point to ref lane is larger than GT point, (12)
                 diff = delta_pred - delta_gt                                  # larger by how much, (12)
                 loss += (diff*indicator)[has_gt_preds[i]].mean()              # take the average over points that have future GT
-        return loss
+                count += 1
+        return loss / count                                                   # take average over batches

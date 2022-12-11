@@ -21,9 +21,9 @@ class LaneSelectionLoss(Metric):
         loss = 0
 
         map_info = data['map_info']
-        att_weights = model_outputs['att_weights']
+        att_weights = model_outputs['att_weights']  # (batch_size, num_lane)
         for i in range(len(map_info)):
             gt_idx = map_info[i]['label']
             if gt_idx != 90:    # refer to nuScenes.py, lane_label=90 indicates invalid reference lane
                 loss += self.criterion(att_weights[i], torch.tensor(gt_idx).to('cuda'))
-        return loss / len(att_weights)
+        return [loss / len(att_weights)]  # need to average here because batch-wise loss are added during the for loss

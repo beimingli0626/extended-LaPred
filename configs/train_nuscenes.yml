@@ -27,8 +27,8 @@ current_epoch: 0
 total_epoch: 31
 
 # Losses
-losses: ['lane_select', 'prediction_loss']
-loss_weights: [1, 1]
+losses: ['lane_select', 'prediction_loss', 'mod_select']
+loss_weights: [0.3, 1, 1]
 
 # LR
 optim_args:

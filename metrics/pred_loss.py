@@ -15,10 +15,10 @@ class PredictionLoss(Metric):
 
     def compute(self, model_outputs, data):
         """
-        Compute position loss
+        Compute prediction loss
         :param model_outputs: a dict includes the full model prediction
         :param data: raw data contains ground truth infos
-        :return loss: computed position loss
+        :return loss: computed loss, a list [loss, position_loss, laneoff_loss]
         """
         has_gt_preds = torch.cat([x[0:1] for x in gpu(data['has_preds'])], 0)  # (batch_size, 2*pred_size)
         gt_preds = torch.cat([x[0:1] for x in gpu(data['gt_preds'])], 0)    # (batch_size, 2*pred_size, 2), ground truth in global coordinate
@@ -51,4 +51,4 @@ class PredictionLoss(Metric):
         # calculate two losses
         position_loss = self.positionloss.compute(has_gt_preds, gt_preds, preds)
         laneoff_loss = self.laneoffloss.compute(data, mask, has_gt_preds, gt_preds, preds)
-        return position_loss + laneoff_loss
+        return [position_loss + laneoff_loss, position_loss, laneoff_loss]

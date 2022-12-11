@@ -29,4 +29,4 @@ if __name__ == '__main__':
     writer = SummaryWriter(os.path.join(root_path, 'summary/logs'))
     trainer = Trainer(config, writer)
     trainer.train(scheduler)
-    trainer.writer.close()
+    writer.close()
