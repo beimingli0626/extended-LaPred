@@ -58,7 +58,7 @@ class MTP(nn.Module):
                               shape: (batch_size, tde_merger_dim) 
         :return out[pred_trajs]: predicted global trajectories
                               shape: (batch_size, k_mod, 2*config['pred_size'], 2)
-        :return out[cls]: ? I guess likelihood of each modality (relevance between modality and GT)
+        :return out[cls]: likelihood of each modality (relevance between modality and GT)
                               shape: (batch_size, k_mod)
         """
         agent_ctrs, rot, orig = gpu(inputs['ctrs']), gpu(inputs['rot']), gpu(inputs['orig'])

@@ -67,7 +67,13 @@ def preprocessor(split) :
     f.close()
 
 if __name__ == "__main__":
-    print('preprocess train dataset')
-    preprocessor('train') 
-    print('preprocess val dataset')
-    preprocessor('val')   
+    if config['dataset'] == 'v1.0-trainval':
+        print('preprocess train dataset')
+        preprocessor('train') 
+        print('preprocess val dataset')
+        preprocessor('val') 
+    elif config['dataset'] == 'v1.0-mini':
+        print('preprocess mini train dataset')
+        preprocessor('mini_train') 
+        print('preprocess mini val dataset')
+        preprocessor('mini_val')   

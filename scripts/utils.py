@@ -2,6 +2,28 @@ import numpy as np
 import torch
 
 
+class CosineLR:
+    """
+    Cosine learning rate schedule with warmup
+    """
+    def __init__(self, config, optimizer):
+        self.config = config
+        self.epoch = 0
+        self.optimizer = optimizer
+
+        self.T0 = int(self.config['total_epoch'] / 5)
+        self.eta_max = self.config['optim_args']['eta_max']
+
+    def step(self):
+        self.epoch += 1
+        if self.epoch <= self.T0:
+            eta = 1e-4 + (self.epoch / self.T0) * self.eta_max
+        else:
+            eta = self.eta_max * np.cos((np.pi / 2) * (self.epoch - self.T0) / (self.config['total_epoch'] - self.T0)) + 1e-6
+        for op_params in self.optimizer.param_groups:
+            op_params['lr'] = eta
+
+
 def load_weight(net, weight_dict) :
     state_dict = net.state_dict()
     for key in weight_dict.keys() :
@@ -11,6 +33,7 @@ def load_weight(net, weight_dict) :
                 value = value.data
             state_dict[key] = value
     net.load_state_dict(state_dict)
+
 
 def gpu(data) :
     if isinstance(data, list) or isinstance(data, tuple) :
@@ -22,6 +45,7 @@ def gpu(data) :
         data = data.contiguous().cuda(non_blocking=True)
     return data
 
+
 def from_numpy(data) :
     if isinstance(data, dict) :
         for key in data.keys() :
@@ -31,6 +55,7 @@ def from_numpy(data) :
     if isinstance(data, np.ndarray) :
         data = torch.from_numpy(data)
     return data
+
 
 def to_numpy(data) :
     if isinstance(data, dict) :
@@ -42,6 +67,7 @@ def to_numpy(data) :
         data = data.numpy()
     return data
 
+
 def to_long(data) :
     if isinstance(data, dict) :
         for key in data.keys() :
@@ -52,6 +78,7 @@ def to_long(data) :
         data = data.long()
     return data
 
+
 def ref_copy(data) :
     if isinstance(data, list) :
         return [ref_copy(x) for x in data]
@@ -61,6 +88,7 @@ def ref_copy(data) :
             d[key] = ref_copy(data[key])
         return d
     return data
+
 
 def to_int16(data) :
     if isinstance(data, dict) :
