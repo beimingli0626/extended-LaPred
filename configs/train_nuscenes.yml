@@ -1,0 +1,38 @@
+# Dataset
+dataset: "v1.0-trainval"
+preprocess : True
+
+# Lane
+lane: 15
+lane_radius: 100
+num_points: 50
+lane_forward_length: 80
+lane_backward_length: 20
+
+# Model
+pred_range: [-100.0, 100.0, -100.0, 100.0]
+train_size: 2
+pred_size: 6
+agent_enc_dim: 128  # dimension of agent encoding per time sequence
+lane_enc_dim: 128   # dimension of lane encoding per time sequence, must be the same as agent_enc_dim
+tde_merger_dim: 128 # dimension of the fully connected layer output of the feature merger in FDE
+lane_att_dim: 128   # dimension of Lane Attention layer, don't use outside of LA block
+mtp_dim: 128        # dimension of MTP block
+k_mod: 10
+
+# Train
+batch_size: 512
+num_workers: 0
+current_epoch: 0
+total_epoch: 31
+
+# Losses
+losses: ['lane_select', 'prediction_loss']
+loss_weights: [1, 1]
+
+# LR
+optim_args:
+  lr: 0.001
+  eta_max: 0.001
+  scheduler_step: 20
+  scheduler_gamma: 0.1

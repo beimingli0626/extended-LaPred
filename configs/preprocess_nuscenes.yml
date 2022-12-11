@@ -1,0 +1,15 @@
+# Dataset
+dataset: "v1.0-trainval"
+preprocess : False
+
+# Lane
+lane: 15
+lane_radius: 100
+num_points: 50
+lane_forward_length: 80
+lane_backward_length: 20
+
+# Model
+pred_range: [-100.0, 100.0, -100.0, 100.0]
+train_size: 2
+pred_size: 6
