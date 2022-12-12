@@ -9,6 +9,9 @@ import wandb
 from scripts.trainer import Trainer
 from datetime import datetime
 import argparse
+import torch
+import numpy as np
+import random
 
 root_path = os.path.dirname(__file__)
 sys.path.append(root_path) 
@@ -19,6 +22,13 @@ if __name__ == '__main__':
     parser.add_argument('--log_dir', type=str, default=datetime.now().strftime("%d_%m_%Y_%H_%M"), help='where to store tensorboard log')
     parser.add_argument('--name', type=str, default='test', help='name of wandb log')
     args = parser.parse_args()
+
+    # Manually set random seed
+    seed = 42
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
 
     # Configuration
     config_path = os.path.join(root_path, 'configs/train_nuscenes.yml')
