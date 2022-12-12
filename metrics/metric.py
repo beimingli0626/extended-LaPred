@@ -6,7 +6,7 @@ class Metric:
     Base class for prediction metric/loss function
     """
     @abc.abstractmethod
-    def __init__(self):
+    def __init__(self, config):
         raise NotImplementedError()
 
 

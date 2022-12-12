@@ -76,27 +76,27 @@ class TFE(nn.Module):
                     # TODO: do we need to consider 'if len(x[j][0].shape) < 2'
         nearby_agents = nearby_agents.flatten(0, 1)   # (batch_size*num_lane, past_t*2+1, 6)
 
-
         # NOTE: try concatenate each lane with nearby two lanes information, the same for nearby agent
-        # lanes and agents at left and right of current lane
-        # lane_feats_left = torch.zeros_like(lane_feats)
-        nearby_agents_left = torch.zeros_like(nearby_agents)
-        # lane_feats_right = torch.zeros_like(lane_feats)
-        nearby_agents_right = torch.zeros_like(nearby_agents)
-        for i in range(batch_size):
-            for j in range(num_lane):
-                lane_idx = i*num_lane + j
-                if j >= 1:
-                    # lane_feats_left[lane_idx] = lane_feats[lane_idx-1]
-                    nearby_agents_left[lane_idx] = nearby_agents[lane_idx-1]
-                if j < num_lane - 1:
-                    # lane_feats_right[lane_idx] = lane_feats[lane_idx+1]
-                    nearby_agents_right[lane_idx] = nearby_agents[lane_idx+1]
-                    
-        # concatenate the information of current lane with nearby two lanes
-        # NOTE: exceeds GPU memory if concatenate lane features
-        # lane_feats = torch.cat([lane_feats_left, lane_feats, lane_feats_right], dim=1)              # (batch_size*num_lane, 3*num_points, 2)
-        nearby_agents = torch.cat([nearby_agents_left, nearby_agents, nearby_agents_right], dim=1)  # (batch_size*num_lane, 3*(past_t*2+1), 6)
+        if self.config['multi_agent']:
+            # lanes and agents at left and right of current lane
+            # lane_feats_left = torch.zeros_like(lane_feats)
+            # lane_feats_right = torch.zeros_like(lane_feats)
+            nearby_agents_left = torch.zeros_like(nearby_agents)
+            nearby_agents_right = torch.zeros_like(nearby_agents)
+            for i in range(batch_size):
+                for j in range(num_lane):
+                    lane_idx = i*num_lane + j
+                    if j >= 1:
+                        # lane_feats_left[lane_idx] = lane_feats[lane_idx-1]
+                        nearby_agents_left[lane_idx] = nearby_agents[lane_idx-1]
+                    if j < num_lane - 1:
+                        # lane_feats_right[lane_idx] = lane_feats[lane_idx+1]
+                        nearby_agents_right[lane_idx] = nearby_agents[lane_idx+1]
+                        
+            # concatenate the information of current lane with nearby two lanes
+            # NOTE: exceeds GPU memory if concatenate lane features
+            # lane_feats = torch.cat([lane_feats_left, lane_feats, lane_feats_right], dim=1)              # (batch_size*num_lane, 3*num_points, 2)
+            nearby_agents = torch.cat([nearby_agents_left, nearby_agents, nearby_agents_right], dim=1)  # (batch_size*num_lane, 3*(past_t*2+1), 6)
                 
         return lane_feats, nearby_agents
 

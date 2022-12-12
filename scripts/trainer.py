@@ -48,11 +48,11 @@ class Trainer:
                                                             gamma=config['optim_args']['scheduler_gamma'])
 
         # Define losses
-        self.losses = [initialize_metric(config['losses'][i]) for i in range(len(config['losses']))]
+        self.losses = [initialize_metric(config['losses'][i], config) for i in range(len(config['losses']))]
         self.loss_weights = self.config['loss_weights']
 
         # Define evaluation metrics
-        self.metrics = EvaluationMetrics()
+        self.metrics = EvaluationMetrics(config)
 
         # Define training stats logger
         if config['logger'] == 'tensorboard':

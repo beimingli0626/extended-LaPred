@@ -48,5 +48,5 @@ if __name__ == '__main__':
     trainer = Trainer(config, writer)
     trainer.train()
 
-    # clode tensorboard if needed
+    # close tensorboard if needed
     if config['logger'] == 'tensorboard': writer.close()

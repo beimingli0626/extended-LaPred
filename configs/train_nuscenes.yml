@@ -1,5 +1,5 @@
 # Dataset
-dataset: "v1.0-trainval"  # 'v1.0-trainval' for full dataset, 'v1.0-mini' for mini dataset
+dataset: 'v1.0-trainval'  # 'v1.0-trainval' for full dataset, 'v1.0-mini' for mini dataset
 preprocess : True
 
 # Lane
@@ -29,12 +29,15 @@ total_epoch: 50
 # Losses
 losses: ['lane_select', 'prediction_loss', 'mod_select']
 loss_weights: [0.3, 1, 1]
+nn_mod_select: True         # True for select modality with NN, False for naive mod selection (bad performance)
+weighted_lane_select: True  # True if assign higher loss to farther GT lane
+multi_agent: False          # True for multiagent concatenate before agent encoding, False for single agent
 
 # LR
 optim_args:
   lr: 0.001
   eta_max: 0.001
-  scheduler: 'cos' # 'cos' for cosine LR with warmup, otherwise 'step' for StepLR
+  scheduler: 'step' # 'cos' for cosine LR with warmup, otherwise 'step' for StepLR
   scheduler_step: 30
   scheduler_gamma: 0.1
 

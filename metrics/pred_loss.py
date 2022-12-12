@@ -9,9 +9,10 @@ class PredictionLoss(Metric):
     """
     Prediction Loss, which composed of position loss and lane-off loss
     """
-    def __init__(self):
-        self.positionloss = PositionLoss()
-        self.laneoffloss = LaneOffLoss()
+    def __init__(self, config):
+        self.config = config
+        self.positionloss = PositionLoss(config)
+        self.laneoffloss = LaneOffLoss(config)
 
     def compute(self, model_outputs, data):
         """

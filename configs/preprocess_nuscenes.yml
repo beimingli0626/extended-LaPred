@@ -1,5 +1,5 @@
 # Dataset
-dataset: "v1.0-trainval"  # 'v1.0-trainval' for full dataset, 'v1.0-mini' for mini dataset
+dataset: 'v1.0-trainval'  # 'v1.0-trainval' for full dataset, 'v1.0-mini' for mini dataset
 preprocess : False
 
 # Lane

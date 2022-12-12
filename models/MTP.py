@@ -37,12 +37,13 @@ class MTP(nn.Module):
             )
         self.layers = nn.ModuleList(layers)
 
-        # layers predict which modality matches the ground truth best
-        self.attDest = AttDest(config)
-        self.clsNet = nn.Sequential(
-            LinearRes(mtp_dim, mtp_dim, 'BN'),
-            nn.Linear(mtp_dim, 1)
-        )
+        # if use NN layers to predict which modality matches the ground truth best
+        if self.config['nn_mod_select']:
+            self.attDest = AttDest(config)
+            self.clsNet = nn.Sequential(
+                LinearRes(mtp_dim, mtp_dim, 'BN'),
+                nn.Linear(mtp_dim, 1)
+            )
 
 
     def forward(self, inputs, target_feats, target_past, att_feats):
@@ -75,27 +76,32 @@ class MTP(nn.Module):
         pred_trajs = torch.cat([traj.unsqueeze(1) for traj in pred_trajs], 1)       # (batch_size, k_mod, 4*config['pred_size'])
         pred_trajs = pred_trajs.view(pred_trajs.size(0), pred_trajs.size(1), -1, 2) # (batch_size, k_mod, 2*config['pred_size'], 2)
         
-        # concatenate past trajectory and predicted trajectory
-        cls = torch.cat([pred.unsqueeze(1) for pred in predictions], 1) # (batch_size, 4*pred_size, k_mod)
-        cls = cls.view(-1, 2 * 2 * self.config['pred_size'])            # (batch_size*k_mod, 4*pred_size)
-        target_past = target_past[:, :, :2].repeat((self.config['k_mod'], 1, 1))  # (batch_size*k_mod, 5, 2)
-        target_past = target_past.view(cls.size(0), -1)                           # (batch_size*k_mod, 10)
-        cls_feats = torch.cat((target_past, cls), 1)                              # (batch_size*k_mod, 34)
+        if self.config['nn_mod_select']:
+            # concatenate past trajectory and predicted trajectory
+            cls = torch.cat([pred.unsqueeze(1) for pred in predictions], 1) # (batch_size, 4*pred_size, k_mod)
+            cls = cls.view(-1, 2 * 2 * self.config['pred_size'])            # (batch_size*k_mod, 4*pred_size)
+            target_past = target_past[:, :, :2].repeat((self.config['k_mod'], 1, 1))  # (batch_size*k_mod, 5, 2)
+            target_past = target_past.view(cls.size(0), -1)                           # (batch_size*k_mod, 10)
+            cls_feats = torch.cat((target_past, cls), 1)                              # (batch_size*k_mod, 34)
 
-        # get current location of targets and destination locations
-        target_ctrs = torch.cat([ctr[0:1] for ctr in agent_ctrs], 0)              # (batch_size, 2)                
-        dest_ctrs = pred_trajs[:, :, -1].detach()                                 # (batch_size, k_mod, 2), destination of predicted trajectory
-        
-        # neural network, which predicts the relevance of each modality to the ground truth
-        cls_inputs = self.attDest(integrated_feats, cls_feats, target_ctrs, dest_ctrs)  # (batch_size*k_mod, mtp_dim)
-        cls_outputs = self.clsNet(cls_inputs).view(-1, self.config['k_mod'])            # (batch_size, k_mod)
-        
-        # sort predict trajectories, by the predicted relevant factor cls_outputs
-        cls_outputs, sort_idx = cls_outputs.sort(1, descending = True)  # (batch_size, k_mod), (batch_size, k_mod)
-        row_idx = torch.arange(len(sort_idx)).long()
-        row_idx = row_idx.to(sort_idx.device).view(-1, 1).repeat(1, sort_idx.size(1)).view(-1)
-        sort_idx = sort_idx.view(-1)
-        pred_trajs = pred_trajs[row_idx, sort_idx].view(cls_outputs.size(0), cls_outputs.size(1), -1, 2)  # (batch_size, k_mod, 2*config['pred_size'], 2)
+            # get current location of targets and destination locations
+            target_ctrs = torch.cat([ctr[0:1] for ctr in agent_ctrs], 0)              # (batch_size, 2)                
+            dest_ctrs = pred_trajs[:, :, -1].detach()                                 # (batch_size, k_mod, 2), destination of predicted trajectory
+            
+            # neural network, which predicts the relevance of each modality to the ground truth
+            cls_inputs = self.attDest(integrated_feats, cls_feats, target_ctrs, dest_ctrs)  # (batch_size*k_mod, mtp_dim)
+            cls_outputs = self.clsNet(cls_inputs).view(-1, self.config['k_mod'])            # (batch_size, k_mod)
+            
+            # sort predict trajectories, by the predicted relevant factor cls_outputs
+            cls_outputs, sort_idx = cls_outputs.sort(1, descending = True)  # (batch_size, k_mod), (batch_size, k_mod)
+            row_idx = torch.arange(len(sort_idx)).long()
+            row_idx = row_idx.to(sort_idx.device).view(-1, 1).repeat(1, sort_idx.size(1)).view(-1)
+            sort_idx = sort_idx.view(-1)
+            pred_trajs = pred_trajs[row_idx, sort_idx].view(cls_outputs.size(0), cls_outputs.size(1), -1, 2)  # (batch_size, k_mod, 2*config['pred_size'], 2)
+        elif not self.config['nn_mod_select']:
+            # naive ranking
+            cls_outputs = gpu(torch.arange(self.config['k_mod']).long().unsqueeze(0))   # (1, k_mod)
+            cls_outputs = cls_outputs.repeat([pred_trajs.shape[0], 1])                  # (batch_size, k_mod)
 
         # turn local trajectory to global coordinate
         outputs = {}

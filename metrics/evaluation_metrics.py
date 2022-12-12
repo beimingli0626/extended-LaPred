@@ -15,8 +15,8 @@ class EvaluationMetrics(Metric):
     MinADE: The average of pointwise L2 distances between the predicted trajectory and ground truth over the k most likely predictions.
     MinFDE: L2 distance between the final points of the prediction and ground truth. We take the minimum FDE over the k most likely predictions and average over all agents.
     """
-    def __init__(self):
-        pass
+    def __init__(self, config):
+        self.config = config
 
     def compute(self, model_outputs, data):
         """

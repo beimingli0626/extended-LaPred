@@ -11,8 +11,8 @@ class LaneOffLoss():
     
     Refer to original LAPred Paper for details: https://arxiv.org/abs/2104.00249
     """
-    def __init__(self):
-        pass
+    def __init__(self, config):
+        self.config = config
 
     def compute(self, data, mask, has_gt_preds, gt_preds, preds):
         """

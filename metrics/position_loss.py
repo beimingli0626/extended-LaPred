@@ -6,7 +6,8 @@ class PositionLoss():
     Position Loss, which is the L1 loss between the best modality and ground truth trajectory
     Calculated in pred_loss
     """
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         # use default beta = 1.0
         self.criterion = nn.SmoothL1Loss(reduction="sum")
 
