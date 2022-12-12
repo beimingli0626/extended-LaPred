@@ -32,8 +32,10 @@ class Trainer:
         self.val_loader = DataLoader(val_set, config['batch_size'], shuffle=True, pin_memory=True, \
                                     num_workers=self.config['num_workers'], collate_fn=collate_fn)
         
-        # Define model
+        # Define model and get total number of parameter
         self.model = PredictionModel(config).cuda()
+        num_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        print("Number of parameters of current prediction model: ", num_params)
 
         # Define optimizer
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=config['optim_args']['lr'])

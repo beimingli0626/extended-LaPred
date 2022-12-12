@@ -1,12 +1,13 @@
 ######## Preprocess script for nuScenes Dataset #########
 # Author: Beiming Li
-# Date: 11/21/22
+# Date: 10/12/22
 # Description: 
 # Define a customized Dataset class which acts as dataloader 
 # as well as data preprocessor. We preprocess the data first
 # to save time during run time.
 #
-# This code is based on nuScenes preprocess pipeline at:
+# This code is largely based on the following nuScenes preprocess 
+# pipeline with annotation and modification:
 # https://github.com/bdokim/LaPred/blob/master/data_process.py
 
 import numpy as np
@@ -105,7 +106,7 @@ class nuScenesDataset(Dataset):
       # Note: Here, we use the last position - current position to estimate the yaw of the vehicle at current timestep. But we could use quaternion_yaw(Quaternion(sample_annotation['rotation'])) instead
       # TODO: shouldn't we use np.pi / 2 ????? But maybe the model is not affected as long as all the features and lanes are rotated by the same angle
       # NOTE: rotate (np.pi / 2 - yaw) so that the new coordinate y-axis is align with the yaw direction in original direction; rotate(np.pi - yaw) would results in new coordinate x-axis negatively align with the yaw direction, which doesn't make much sense
-      theta = np.pi - np.arctan2(prev[1], prev[0])
+      theta = np.pi / 2 - np.arctan2(prev[1], prev[0])
       rot = np.asarray([[np.cos(theta), -np.sin(theta)], \
           [np.sin(theta), np.cos(theta)]], np.float32)
 

@@ -19,7 +19,7 @@ class CosineLR:
         if self.epoch <= self.T0:
             eta = 1e-4 + (self.epoch / self.T0) * self.eta_max
         else:
-            eta = self.eta_max * np.cos((np.pi / 2) * (self.epoch - self.T0) / (self.config['total_epoch'] - self.T0)) + 1e-6
+            eta = self.eta_max * np.cos((np.pi / 2) * (self.epoch - self.T0) / (self.config['total_epoch'] - self.T0)) + 1e-5
         for op_params in self.optimizer.param_groups:
             op_params['lr'] = eta
 
