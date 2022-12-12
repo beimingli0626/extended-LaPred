@@ -29,7 +29,7 @@ class TFE(nn.Module):
         """
         # get features of target agent, lane and surrounding agent feature
         targets = self.get_targets(gpu(inputs['feats']))      # (batch_size, past_t*2+1, 6)
-        lane_feats, nearby_agents = self.get_lanes(to_long(gpu(inputs["map_info"])), self.config)
+        lane_feats, nearby_agents = self.get_lanes(to_long(gpu(inputs["map_info"])))
 
         # encode target agent / nearby agents / lane feature
         targets_encoding = self.target_encoder(targets)       # (batch_size, encoder_dim)
@@ -55,18 +55,19 @@ class TFE(nn.Module):
         return targets 
 
     
-    def get_lanes(self, map_info, config):
+    def get_lanes(self, map_info):
         """
         :param inputs: data['map_info'], which is a list of dictionary
                        shape: [batch_size * dict()]
         :return lane_feats: poses of nearby lanes, (batch_size*num_lane, num_points, 2)
-        :return nearby_agents: features of closest agent for each lane (batch_size*num_lane, past_t*2+1, 6)
+        :return nearby_agents: features of closest agent for each lane (batch_size*num_lane, past_t*2+1, 6) / (batch_size*num_lane, 3*(past_t*2+1), 6)
         """
         lane_feats = [x['lane_feats'].to(torch.float32) for x in map_info]
         lane_feats = torch.cat(lane_feats, 0)
 
         batch_size = len(map_info)
-        nearby_agents = torch.zeros((batch_size, config['lane'], config['train_size']*2+1, 6)).cuda()
+        num_lane = self.config['lane']
+        nearby_agents = torch.zeros((batch_size, self.config['lane'], self.config['train_size']*2+1, 6)).cuda()
         for i in range(batch_size): 
             trajs = map_info[i]['nearby_trajs']       # trajs: (num_lane, num_nearby_vehicle, (past_t * 2 + 1, 6))
             for j in range(len(trajs)):               # iterate through each nearby lane
@@ -74,6 +75,29 @@ class TFE(nn.Module):
                     nearby_agents[i, j] = trajs[j][0] # select the closest agent
                     # TODO: do we need to consider 'if len(x[j][0].shape) < 2'
         nearby_agents = nearby_agents.flatten(0, 1)   # (batch_size*num_lane, past_t*2+1, 6)
+
+
+        # NOTE: try concatenate each lane with nearby two lanes information, the same for nearby agent
+        # lanes and agents at left and right of current lane
+        # lane_feats_left = torch.zeros_like(lane_feats)
+        nearby_agents_left = torch.zeros_like(nearby_agents)
+        # lane_feats_right = torch.zeros_like(lane_feats)
+        nearby_agents_right = torch.zeros_like(nearby_agents)
+        for i in range(batch_size):
+            for j in range(num_lane):
+                lane_idx = i*num_lane + j
+                if j >= 1:
+                    # lane_feats_left[lane_idx] = lane_feats[lane_idx-1]
+                    nearby_agents_left[lane_idx] = nearby_agents[lane_idx-1]
+                if j < num_lane - 1:
+                    # lane_feats_right[lane_idx] = lane_feats[lane_idx+1]
+                    nearby_agents_right[lane_idx] = nearby_agents[lane_idx+1]
+                    
+        # concatenate the information of current lane with nearby two lanes
+        # NOTE: exceeds GPU memory if concatenate lane features
+        # lane_feats = torch.cat([lane_feats_left, lane_feats, lane_feats_right], dim=1)              # (batch_size*num_lane, 3*num_points, 2)
+        nearby_agents = torch.cat([nearby_agents_left, nearby_agents, nearby_agents_right], dim=1)  # (batch_size*num_lane, 3*(past_t*2+1), 6)
+                
         return lane_feats, nearby_agents
 
   
@@ -101,17 +125,17 @@ class AgentEncoder(nn.Module):
     def forward(self, inputs):
         """
         Forward pass for Encoder
-        :param inputs: features of the target agent, (batch_size, past_t*2+1, 6) / (batch_size*num_lane, past_t*2+1, 6)
-        :return: agent features encoded by CNN+LSTM, (batch_size, H_out) / (batch_size*num_lane, past_t*2+1, 6)
+        :param inputs: features of the target agent, (batch_size, past_t*2+1, 6) / (batch_size*num_lane, past_t*2+1, 6) / (batch_size*num_lane, 3*(past_t*2+1), 6)
+        :return: agent features encoded by CNN+LSTM, (batch_size, H_out) / (batch_size*num_lane, past_t*2+1, 6) / (batch_size*num_lane, 3*(past_t*2+1), 6)
 
         Note: 'transpose' func returns a new tensor with same data
               batch_size*num_lane for surrounding agents, batch_size for target agent
         """
         # 1D CNN
-        out = self.conv(inputs.transpose(1, 2)) #(batch_size, 6, 5)->(batch_size, 128, 3)
+        out = self.conv(inputs.transpose(1, 2)) #(batch_size, 6, 5)->(batch_size, 128, 3) / (batch_size, 6, 15)->(batch_size, 128, 13)
 
         # LSTM
-        out = out.transpose(1, 2)   # (batch_size, 3, 128), where 3 acts as sequence length
+        out = out.transpose(1, 2)   # (batch_size, 3, 128), where 3 acts as sequence length / (batch_size, 13, 128)
         out, _ = self.lstm(out)     # (batch_size, L, H_in) -> (batch_size, L, H_out)
         out = out[:, -1]            # (batch_size, H_out), only keep projection from final timestep 
         return out
@@ -151,7 +175,7 @@ class LaneEncoder(nn.Module):
 
         # LSTM
         out = out.transpose(1, 2)   # (batch_size*num_lane, num_points, 128), where num_points acts as sequence length
-        out, _ = self.lstm(out)     # (batch_size*num_lane, L, H_in) -> (batch_size, L, H_out)
+        out, _ = self.lstm(out)     # (batch_size*num_lane, L, H_in) -> (batch_size_num_lane, L, H_out)
         out = out[:, -1]            # (batch_size*num_lane, H_out), only keep projection from final timestep 
         return out
 
