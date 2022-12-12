@@ -25,6 +25,7 @@ class PredictionLoss(Metric):
         preds = model_outputs['pred_trajs']                                 # (batch_size, k_mod, 2*pred_size, 2)
 
         # find the last future timestamp that have ground truth future trajectories
+        # Note: Many tracks do not have a full 6 seconds of future history due to leaving nuScenes sensor range.
         last = has_gt_preds.float() + (torch.arange(1, has_gt_preds.shape[-1]+1).float().to(has_gt_preds.device)) / 100 # divided by 100 to make sure number in range is smaller than 1
         max_last, last_idx = last.max(1)    # max would be the last timestamp if has_gt_preds are all 1, (batch_size), (batch_size)
         mask = max_last > 1.0               # if there exists GT for that batch

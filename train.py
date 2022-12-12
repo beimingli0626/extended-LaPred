@@ -5,6 +5,7 @@ import os
 import sys
 import yaml
 from torch.utils.tensorboard import SummaryWriter
+import wandb
 from scripts.trainer import Trainer
 from datetime import datetime
 import argparse
@@ -16,6 +17,7 @@ if __name__ == '__main__':
     # Arg Parse
     parser = argparse.ArgumentParser()
     parser.add_argument('--log_dir', type=str, default=datetime.now().strftime("%d_%m_%Y_%H_%M"), help='where to store tensorboard log')
+    parser.add_argument('--name', type=str, default='test', help='name of wandb log')
     args = parser.parse_args()
 
     # Configuration
@@ -35,8 +37,16 @@ if __name__ == '__main__':
     config['preprocess_train'] = os.path.join(config['preprocess_path'], train_path)
     config['preprocess_val'] = os.path.join(config['preprocess_path'], val_path)
 
+    # define logger
+    if config['logger'] == 'tensorboard':
+        writer = SummaryWriter(log_dir=os.path.join(root_path, 'summary/log/', args.log_dir))
+    elif config['logger'] == 'wandb':
+        wandb.init(project="LaPred", entity="lapred", group='Extended_LaPred', name=args.name, config=config)
+        writer = None
+
     # evoke training process
-    writer = SummaryWriter(log_dir=os.path.join(root_path, 'summary/log/', args.log_dir))
     trainer = Trainer(config, writer)
     trainer.train()
-    writer.close()
+
+    # clode tensorboard if needed
+    if config['logger'] == 'tensorboard': writer.close()

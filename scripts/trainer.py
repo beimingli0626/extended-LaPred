@@ -9,6 +9,8 @@ from scripts.initialization import initialize_metric
 from metrics.evaluation_metrics import EvaluationMetrics
 from scripts.utils import CosineLR
 
+import wandb
+import copy
 
 class Trainer:
     """
@@ -53,8 +55,9 @@ class Trainer:
         self.metrics = EvaluationMetrics()
 
         # Define training stats logger
-        self.writer = writer
-        self.tb_iters = 0
+        if config['logger'] == 'tensorboard':
+            self.writer = writer
+        self.log_iters = 0
     
 
     def train(self):
@@ -68,11 +71,11 @@ class Trainer:
             # Validation
             val_metrics, val_loss_dict = self.run_epoch('val', self.val_loader)
 
-            # Log Tensorboard
-            self.log_tensorboard(train_metrics, train_loss_dict, val_metrics, val_loss_dict)
-
             # Print current status for sanity check
             self.print_metrics(epoch, train_metrics, train_loss_dict, val_metrics, val_loss_dict)
+
+            # Log stats
+            self.log(train_metrics, train_loss_dict, val_metrics, val_loss_dict)
 
 
     def run_epoch(self, mode, dataloader):
@@ -157,22 +160,57 @@ class Trainer:
         return metrics
 
 
-    def log_tensorboard(self, train_metrics, train_loss_dict, val_metrics, val_loss_dict):
+    def log(self, train_metrics, train_loss_dict, val_metrics, val_loss_dict):
         """
         Log losses and metrics
         """
-        self.tb_iters += 1
-        for key, value in train_loss_dict.items():
-            self.writer.add_scalar('train/' + key, value, self.tb_iters)
-        for key, value in val_loss_dict.items():
-            self.writer.add_scalar('val/' + key, value, self.tb_iters)
-        for key, value in train_metrics.items():
-            self.writer.add_scalar('train/' + key, value, self.tb_iters)
-        for key, value in val_metrics.items():
-            self.writer.add_scalar('val/' + key, value, self.tb_iters)
-        self.writer.flush()
+        if self.config['logger'] == 'tensorboard':
+            self.log_tensorboard(train_metrics, train_loss_dict, val_metrics, val_loss_dict)
+        elif self.config['logger'] == 'wandb':
+            self.log_wandb(train_metrics, train_loss_dict, val_metrics, val_loss_dict)
 
+
+    def log_tensorboard(self, train_metrics, train_loss_dict, val_metrics, val_loss_dict):
+        """
+        Log losses and metrics with tensorboard
+        """
+        self.log_iters += 1
+        for key, value in train_loss_dict.items():
+            self.writer.add_scalar('train/' + key, value, self.log_iters)
+        for key, value in val_loss_dict.items():
+            self.writer.add_scalar('val/' + key, value, self.log_iters)
+        for key, value in train_metrics.items():
+            self.writer.add_scalar('train/' + key, value, self.log_iters)
+        for key, value in val_metrics.items():
+            self.writer.add_scalar('val/' + key, value, self.log_iters)
+        self.writer.flush()
     
+
+    def log_wandb(self, train_metrics, train_loss_dict, val_metrics, val_loss_dict):
+        """
+        Log losses and metrics with wandb
+        """
+        self.log_iters += 1
+
+        train_loss_dict_ = copy.deepcopy(train_loss_dict)
+        train_metrics_ = copy.deepcopy(train_metrics)
+        val_loss_dict_ = copy.deepcopy(val_loss_dict)
+        val_metrics_ = copy.deepcopy(val_metrics)
+
+        def change_dict_key(d, old_key, new_key, default_value=None):
+            d[new_key] = d.pop(old_key, default_value)
+        for key in train_loss_dict.keys():
+            change_dict_key(train_loss_dict_, key, 'train_'+key)
+        for key in train_metrics.keys():
+            change_dict_key(train_metrics_, key, 'train_'+key)
+        for key in val_loss_dict.keys():
+            change_dict_key(val_loss_dict_, key, 'val_'+key)
+        for key in val_metrics.keys():
+            change_dict_key(val_metrics_, key, 'val_'+key)
+        
+        wandb.log({**train_loss_dict_, **train_metrics_, **val_loss_dict_, **val_metrics_}, commit=True, step=self.log_iters)
+    
+
     def print_metrics(self, epoch, train_metrics, train_loss_dict, val_metrics, val_loss_dict):
         """
         Print losses and metrics per epoch for sanity check

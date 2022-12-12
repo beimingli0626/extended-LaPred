@@ -1,6 +1,9 @@
 # tensorboard
 summary/*
 
+# wandb
+wandb/*
+
 # datasets
 datasets/*
 !datasets/nuScenes.py
