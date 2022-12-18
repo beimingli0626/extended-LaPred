@@ -1,6 +1,8 @@
-"""
-Import packages and add current directory to system path for Google Colab Usage
-"""
+######## Training script #########
+# Author: Beiming Li
+# Date: 18/12/22
+##################################
+
 import os
 import sys
 import yaml

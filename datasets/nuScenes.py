@@ -1,4 +1,4 @@
-######## Preprocess script for nuScenes Dataset #########
+######## Derived Dataset class for nuScenes Dataset #########
 # Author: Beiming Li
 # Date: 10/12/22
 # Description: 

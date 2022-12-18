@@ -1,3 +1,11 @@
+######## Preprocess script #########
+# Author: Beiming Li
+# Date: 18/12/22
+# Description: 
+#
+# This code is adopted based on https://github.com/bdokim/LaPred/blob/master/dataset_preprocess.py
+####################################
+
 import os
 import sys
 import pickle

@@ -6,7 +6,9 @@ from scripts.utils import gpu, to_long
 
 class MTP(nn.Module):
     """
-    Multi-modal Trajectory Prediction Block
+    Multi-modal Trajectory Prediction Block, which outputs
+    predicted trajectories for each modality, along with
+    the predicted likelihood (ranking) of each modality
 
     Paper: https://arxiv.org/abs/1809.10732
     Code Refer to MTP implementation in https://github.com/bdokim/LaPred/blob/master/Lapred_original.py
@@ -76,6 +78,7 @@ class MTP(nn.Module):
         pred_trajs = torch.cat([traj.unsqueeze(1) for traj in pred_trajs], 1)       # (batch_size, k_mod, 4*config['pred_size'])
         pred_trajs = pred_trajs.view(pred_trajs.size(0), pred_trajs.size(1), -1, 2) # (batch_size, k_mod, 2*config['pred_size'], 2)
         
+        # use MSBlock to predict the likelihood of each modality
         if self.config['nn_mod_select']:
             # concatenate past trajectory and predicted trajectory
             cls = torch.cat([pred.unsqueeze(1) for pred in predictions], 1) # (batch_size, 4*pred_size, k_mod)
@@ -153,7 +156,7 @@ class AttDest(nn.Module):
                               shape: (batch_size, 2)
         :param dest_ctrs: destination location of predicted trajectory
                               shape: (batch_size, k_mod, 2)
-        :return agt_output: aggregator output, TODO??????
+        :return agt_output: aggregator output
                               shape: (batch_size*k_mod, mtp_dim)
         """
         integrated_feats = integrated_feats.unsqueeze(1).repeat(1, dest_ctrs.size(1), 1)  
