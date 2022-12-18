@@ -38,7 +38,7 @@ We implement original ideas presented in LaPred in a modularized way, along with
 ## Data Preprocess
 Run the following script execute preprocessing pipeline, which is adopted from original implementation.
 ```shell
-python preprocess.py
+python3 preprocess.py
 ```
 Note that the above script reads in ./configs/preprocess_nuscenes.yml as configuration file, where you could specify preprocessing parameters and select different data split. The preprocessed data will be saved under ./datasets/preprocess.
 
@@ -46,7 +46,7 @@ Note that the above script reads in ./configs/preprocess_nuscenes.yml as configu
 
 To train the model from scratch, run
 ```shell
-python train.py --name <name of your run>
+python3 train.py --name <name of your run>
 ```
 Similar to preprocessing, the above script reads in ./configs/train_nuscenes.yml as configuration file, where you could specify training hyperparameters and select different data split. If the logger is set to be 'wandb', the training statistics will be logged to wandb.ai, which is a wonderful tool for visualization. Otherwise, the training script will save training checkpoints and tensorboard logs in the output directory.
 
