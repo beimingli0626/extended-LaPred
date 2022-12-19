@@ -11,7 +11,7 @@ We implement original ideas presented in LaPred in a modularized way, along with
 ## Dataset
 
 - Download the [nuScenes dataset](https://www.nuscenes.org/download). For this project we need:
-    - Metadata is for all 850 scenes in Trainval split (v1.0)
+    - Metadata for all 850 scenes in Trainval split (v1.0)
     - Map expansion pack (v1.3)
 
 - Placed the downloaded data under ./datasets and the directory should be organized as follows
